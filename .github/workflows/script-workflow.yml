@@ -47,7 +47,7 @@ jobs:
 
   package-and-deploy:
     needs: build-and-test
-    rund-on: ubuntu-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       actions: write
