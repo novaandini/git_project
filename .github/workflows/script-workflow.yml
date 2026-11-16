@@ -1,0 +1,67 @@
+name: Script Workflow (Lint, Security, Test, Env)
+
+# menentukan kapan workflow dijalankan
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    env: 
+      REQUIRED_VAR: "workflow_value"
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+      - name: Ensure script is executeable
+        run: chmod +x scripts/my-script.sh
+
+      # linting stage
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+      - name: Run ShellCheck on script
+        run: shellcheck scripts/my-script.sh
+
+      # security stage
+      - name: Install Flawfinder
+        run: sudo apt-get install -y flawfinder
+      - name: Run Flawfinder security scan
+        run: flawfinder scripts/my-script.sh
+
+      # testing stage
+      - name: Show test message
+        run: echo "Running simple test assertion.."
+      - name: Execute Test Script
+        run: ./scripts/my-script.sh
+
+  package-and-deploy:
+    needs: build-and-test
+    rund-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+      - name: Install zip utility
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip
+      - name: Create deployable ZIP archive
+        run: zip -r workflow_script_package.zip scripts/
+      - name: Upload ZIP file as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: script-artifact
+          path: workflow_script_package.zip
